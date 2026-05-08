@@ -11,6 +11,7 @@ import { JwtGuard } from './auth/guard/jwt.guard';
 import { RolesGuard } from './auth/guard/roles.guard';
 import { MenuModule } from './menu/menu.module';
 import { MailModule } from './mail/mail.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { MailModule } from './mail/mail.module';
     AuthModule,
     MenuModule,
     MailModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [

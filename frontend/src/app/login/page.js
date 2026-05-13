@@ -23,12 +23,14 @@ export default function LoginPage() {
       
       if (token) {
         const decoded = jwtDecode(token);
-        
-        
         login(token); 
-        
-        
-        if (decoded.role === 'admin') {
+
+        const normalizedRole =
+          typeof (decoded?.role ?? decoded?.userRole ?? decoded?.user?.role) === 'string'
+            ? (decoded?.role ?? decoded?.userRole ?? decoded?.user?.role).trim().toLowerCase()
+            : '';
+
+        if (normalizedRole === 'admin') {
           router.push('/admin'); 
         } else {
           router.push('/');      

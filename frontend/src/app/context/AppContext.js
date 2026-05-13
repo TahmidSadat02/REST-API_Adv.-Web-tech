@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode'; 
 import api from '../lib/axios';
@@ -7,6 +7,9 @@ import api from '../lib/axios';
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
+  const normalizeRole = (roleValue) =>
+    typeof roleValue === 'string' ? roleValue.trim().toLowerCase() : '';
+
   const [token, setToken] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [userName, setUserName] = useState(null);
@@ -16,7 +19,26 @@ export const AppProvider = ({ children }) => {
   const router = useRouter();
   const [categories, setCategories] = useState([]);
 
-  const fetchMenu = async () => {
+  const fetchCategories = useCallback(async () => {
+    const storedToken =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('token') || localStorage.getItem('accessToken')
+        : null;
+
+    if (!storedToken) {
+      setCategories([]);
+      return;
+    }
+
+    try {
+      const response = await api.get('/categories');
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Failed to fetch categories", error);
+    }
+  }, []);
+
+  const fetchMenu = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get('/menu');
@@ -26,7 +48,7 @@ export const AppProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const triggerNotification = (message) => {
     setNotification(message);
@@ -40,16 +62,25 @@ export const AppProvider = ({ children }) => {
       setToken(storedToken);
       try {
         const decoded = jwtDecode(storedToken);
-        setUserRole(decoded.role);
+        const normalizedRole = normalizeRole(
+          decoded?.role ?? decoded?.userRole ?? decoded?.user?.role,
+        );
+        setUserRole(normalizedRole || null);
         setUserName(decoded.fullName);
+        if (normalizedRole === 'admin') {
+          fetchCategories();
+        } else {
+          setCategories([]);
+        }
       } catch (error) {
         console.error("Invalid token");
         localStorage.removeItem('token');
         localStorage.removeItem('accessToken');
       }
     }
+
     setLoading(false);
-  }, []);
+  }, [fetchCategories]);
 
   const login = (newToken) => {
     setToken(newToken);
@@ -57,8 +88,16 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('accessToken', newToken);
     try {
       const decoded = jwtDecode(newToken);
-      setUserRole(decoded.role);
+      const normalizedRole = normalizeRole(
+        decoded?.role ?? decoded?.userRole ?? decoded?.user?.role,
+      );
+      setUserRole(normalizedRole || null);
       setUserName(decoded.fullName);
+      if (normalizedRole === 'admin') {
+        fetchCategories();
+      } else {
+        setCategories([]);
+      }
     } catch (e) {
       console.error("Failed to decode token on login");
     }
@@ -69,19 +108,11 @@ export const AppProvider = ({ children }) => {
     setToken(null);
     setUserRole(null);
     setUserName(null);
+    setCategories([]);
     localStorage.removeItem('token');
     localStorage.removeItem('accessToken');
     triggerNotification("Logged out successfully");
     router.push('/');
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await api.get('/categories');
-      setCategories(response.data);
-    } catch (error) {
-      console.error("Failed to fetch categories", error);
-    }
   };
 
   return (

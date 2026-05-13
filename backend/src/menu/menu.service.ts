@@ -19,7 +19,7 @@ export class MenuService {
   }
 
   async findAll(): Promise<Menu[]> {
-    return await this.menuRepository.find();
+    return await this.menuRepository.find({relations: ['category'],});
   }
 
   async update(id: string, updateMenuDto: UpdateMenuDto): Promise<Menu> {

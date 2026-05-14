@@ -18,6 +18,9 @@ export const AppProvider = ({ children }) => {
   const [notification, setNotification] = useState('');
   const router = useRouter();
   const [categories, setCategories] = useState([]);
+  
+  // --- NEW: Shopping Cart State ---
+  const [cart, setCart] = useState([]);
 
   const fetchCategories = useCallback(async () => {
     const storedToken =
@@ -53,6 +56,33 @@ export const AppProvider = ({ children }) => {
   const triggerNotification = (message) => {
     setNotification(message);
     setTimeout(() => setNotification(''), 3000);
+  };
+
+  // --- NEW: Cart Functions ---
+  const addToCart = (item, quantity) => {
+    setCart((prevCart) => {
+      // Check if item is already in cart
+      const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
+      if (existingItem) {
+        // Just increase the quantity
+        return prevCart.map((cartItem) => 
+          cartItem.id === item.id 
+            ? { ...cartItem, quantity: cartItem.quantity + quantity } 
+            : cartItem
+        );
+      }
+      // Add new item to cart
+      return [...prevCart, { ...item, quantity }];
+    });
+    triggerNotification(`Added ${quantity}x ${item.name} to cart!`);
+  };
+
+  const removeFromCart = (itemId) => {
+    setCart((prevCart) => prevCart.filter((item) => item.id !== itemId));
+  };
+
+  const clearCart = () => {
+    setCart([]);
   };
 
   useEffect(() => {
@@ -109,6 +139,7 @@ export const AppProvider = ({ children }) => {
     setUserRole(null);
     setUserName(null);
     setCategories([]);
+    clearCart(); // Clear cart on logout
     localStorage.removeItem('token');
     localStorage.removeItem('accessToken');
     triggerNotification("Logged out successfully");
@@ -117,18 +148,11 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{ 
-      token, 
-      userRole,
-      userName,
-      login, 
-      logout, 
-      menuItems, 
-      loading, 
-      fetchMenu, 
-      notification, 
-      triggerNotification,
-      categories,       
-      fetchCategories  
+      token, userRole, userName, login, logout, 
+      menuItems, loading, fetchMenu, 
+      notification, triggerNotification,
+      categories, fetchCategories,
+      cart, addToCart, removeFromCart, clearCart // Exporting Cart logic
     }}>
       {children}
     </AppContext.Provider>

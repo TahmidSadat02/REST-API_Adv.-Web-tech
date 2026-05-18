@@ -21,12 +21,6 @@ export default function MenuPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (token && userRole === 'admin') {
-      router.push('/admin');
-    }
-  }, [token, userRole, router]);
-
-  useEffect(() => {
     fetchMenu();
     fetchCategories(); 
   }, []);

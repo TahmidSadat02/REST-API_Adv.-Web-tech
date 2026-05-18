@@ -6,7 +6,8 @@ import {
   Patch,
   Post,
   UseGuards,
-  Delete
+  Delete,
+  Query
 } from '@nestjs/common';
 import { MenuService } from './menu.service';
 import { Public } from '../auth/decorators/public.decorator';
@@ -45,7 +46,8 @@ export class MenuController {
 
   @UseGuards(JwtGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.menuService.remove(id);
+  remove(@Param('id') id: string, @Query('force') force?: string) {
+    const isForceDelete = force === 'true';
+    return this.menuService.remove(id, isForceDelete);
   }
 }

@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   
-  // Category Form State (Description removed!)
+  // Category Form State
   const [newCategoryName, setNewCategoryName] = useState('');
 
   // Edit Form State
@@ -20,7 +20,6 @@ export default function AdminDashboard() {
   const [editFormData, setEditFormData] = useState({ name: '', description: '', price: '', isAvailable: true, categoryId: '' });
 
   useEffect(() => {
-    // Defense mechanism: Kick out anyone who isn't an admin
     if (userRole !== 'admin') {
       router.push('/login');
       return;
@@ -55,7 +54,6 @@ export default function AdminDashboard() {
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     try {
-      // Description payload removed!
       await api.post('/categories', { name: newCategoryName });
       triggerNotification(`Category "${newCategoryName}" created successfully.`);
       setNewCategoryName('');
@@ -98,20 +96,24 @@ export default function AdminDashboard() {
     }
   };
 
+  // The Safe Soft Delete (Hides it)
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to permanently delete ${name}?`)) {
+    if (!window.confirm(`Are you sure you want to hide ${name} from the menu?`)) {
       return; 
     }
     try {
       await api.delete(`/menu/${id}`);
-      triggerNotification(`${name} deleted successfully.`);
+      triggerNotification(`${name} removed successfully.`);
       fetchMenu(); 
     } catch (error) {
-      triggerNotification(error.response?.data?.message || "Failed to delete item.");
+      triggerNotification(error.response?.data?.message || "Failed to remove item.");
     }
   };
 
   if (userRole !== 'admin') return null; 
+
+  // Filter out completed orders to keep the dashboard clean
+  const activeOrders = orders.filter(order => order.status !== 'completed');
 
   return (
     <div className="py-8">
@@ -129,13 +131,12 @@ export default function AdminDashboard() {
         <form onSubmit={handleCreateCategory} className="flex gap-4 mb-6">
           <input 
             type="text" 
-            placeholder="Category Name (e.g. Cakes)" 
+            placeholder="Category Name" 
             value={newCategoryName} 
             onChange={(e) => setNewCategoryName(e.target.value)}
             className="flex-1 p-3 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-amber-500"
             required 
           />
-          {/* Description input has been deleted from here! */}
           <button type="submit" className="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition-colors">
             Add Category
           </button>
@@ -159,9 +160,9 @@ export default function AdminDashboard() {
         <h3 className="text-2xl font-bold text-gray-900 mb-6">Incoming Orders</h3>
         {loadingOrders ? (
           <div className="text-gray-500 font-medium">Loading orders...</div>
-        ) : orders.length === 0 ? (
+        ) : activeOrders.length === 0 ? (
           <div className="text-gray-500 bg-gray-50 p-6 rounded-lg border border-gray-200 text-center font-medium">
-            No orders have been placed yet.
+            {orders.length > 0 ? "All orders are completed! Great job." : "No orders have been placed yet."}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -177,12 +178,12 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map(order => (
+                {activeOrders.map(order => (
                   <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="py-4 px-4 text-gray-900 font-bold">#{order.id}</td>
                     <td className="py-4 px-4 text-gray-700 font-medium">{order.customer?.fullName || 'Unknown'}</td>
                     <td className="py-4 px-4 text-gray-600 text-sm">
-                      {order.items?.map(i => `${i.quantity}x ${i.menuItem?.name}`).join(', ')}
+                      {order.items?.map(i => `${i.quantity}x ${i.menuItem?.name || 'Item (Hidden)'}`).join(', ')}
                     </td>
                     <td className="py-4 px-4 text-emerald-600 font-bold">৳{Number(order.totalPrice).toFixed(2)}</td>
                     <td className="py-4 px-4">
@@ -277,7 +278,7 @@ export default function AdminDashboard() {
                       </td>
                       <td className="py-4 px-4 flex gap-4">
                         <button onClick={() => handleEditClick(item)} className="text-gray-600 hover:text-gray-900 font-bold underline transition-colors">Edit</button>
-                        <button onClick={() => handleDelete(item.id, item.name)} className="text-red-500 hover:text-red-700 font-bold underline transition-colors">Delete</button>
+                        <button onClick={() => handleDelete(item.id, item.name)} className="text-orange-500 hover:text-orange-700 font-bold underline transition-colors">Hide</button>
                       </td>
                     </>
                   )}

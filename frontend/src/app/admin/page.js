@@ -96,20 +96,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // The Safe Soft Delete (Hides it)
-  const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to hide ${name} from the menu?`)) {
-      return; 
-    }
-    try {
-      await api.delete(`/menu/${id}`);
-      triggerNotification(`${name} removed successfully.`);
-      fetchMenu(); 
-    } catch (error) {
-      triggerNotification(error.response?.data?.message || "Failed to remove item.");
-    }
-  };
-
   if (userRole !== 'admin') return null; 
 
   // Filter out completed orders to keep the dashboard clean
@@ -278,7 +264,6 @@ export default function AdminDashboard() {
                       </td>
                       <td className="py-4 px-4 flex gap-4">
                         <button onClick={() => handleEditClick(item)} className="text-gray-600 hover:text-gray-900 font-bold underline transition-colors">Edit</button>
-                        <button onClick={() => handleDelete(item.id, item.name)} className="text-orange-500 hover:text-orange-700 font-bold underline transition-colors">Hide</button>
                       </td>
                     </>
                   )}

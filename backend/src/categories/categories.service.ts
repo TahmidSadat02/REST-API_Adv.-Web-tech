@@ -6,6 +6,9 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 
 @Injectable()
 export class CategoriesService {
+  async remove(id: string): Promise<void> {
+    await this.categoryRepository.delete(id);
+  }
   constructor(
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
@@ -16,7 +19,7 @@ export class CategoriesService {
     return this.categoryRepository.save(category);
   }
 
-  // Fetch all categories
+  
   findAll() {
     return this.categoryRepository.find();
   }

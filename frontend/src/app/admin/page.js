@@ -63,6 +63,21 @@ export default function AdminDashboard() {
     }
   };
 
+  // NEW: Delete Category Logic
+  const handleDeleteCategory = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete the "${name}" category? Any items inside it will safely become "Uncategorized".`)) {
+      return;
+    }
+    try {
+      await api.delete(`/categories/${id}`);
+      triggerNotification(`Category "${name}" deleted successfully.`);
+      fetchCategories(); 
+      fetchMenu(); // Refresh the menu so items show as "Uncategorized"
+    } catch (error) {
+      triggerNotification(error.response?.data?.message || "Failed to delete category.");
+    }
+  };
+
   const handleEditClick = (item) => {
     setEditingItemId(item.id);
     setEditFormData({ 
@@ -128,13 +143,21 @@ export default function AdminDashboard() {
           </button>
         </form>
 
+        {/* This is where the X button was added! */}
         <div className="flex flex-wrap gap-2">
           {categories.length === 0 ? (
             <span className="text-gray-500 text-sm font-medium">No categories created yet.</span>
           ) : (
             categories.map(cat => (
-              <div key={cat.id} className="px-4 py-2 bg-gray-100 border border-gray-200 text-gray-800 rounded-full text-sm font-bold flex items-center gap-2">
-                {cat.name}
+              <div key={cat.id} className="px-4 py-2 bg-gray-100 border border-gray-200 text-gray-800 rounded-full text-sm font-bold flex items-center gap-3 shadow-sm hover:shadow transition-shadow">
+                <span>{cat.name}</span>
+                <button 
+                  onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                  className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full w-5 h-5 flex items-center justify-center transition-colors focus:outline-none"
+                  title="Delete Category"
+                >
+                  ✕
+                </button>
               </div>
             ))
           )}

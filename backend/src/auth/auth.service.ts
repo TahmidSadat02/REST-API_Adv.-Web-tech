@@ -77,23 +77,19 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await this.userRepository.findOne({ where: { email } });
     
-    // Security best practice: Don't tell hackers if an email exists or not
     if (!user) {
       return { message: 'If that email exists in our system, a reset link has been sent.' };
     }
 
-    // Generate a secure 64-character token
     const resetToken = crypto.randomBytes(32).toString('hex');
     
-    // Save token and set expiration to 1 hour from now
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = new Date(Date.now() + 3600000); 
     await this.userRepository.save(user);
 
-    // Send the email with the frontend link
+    
     const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
     
-    // Using the new mail service method
     this.mailService.sendPasswordResetEmail(user.email, user.fullName || 'Customer', resetLink)
       .catch((err) => {
         console.error('Failed to send reset password email:', err);
@@ -115,12 +111,27 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired password reset token.');
     }
 
-    // Hash the new password, save it, and destroy the temporary token
     user.password = await bcrypt.hash(newPassword, 10);
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
     await this.userRepository.save(user);
 
     return { message: 'Password has been successfully reset!' };
+  }
+  async changePassword(userId: number, dto: any) {
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(dto.oldPassword, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Incorrect current password');
+    }
+    user.password = await bcrypt.hash(dto.newPassword, 10);
+    await this.userRepository.save(user);
+
+    return { message: 'Password changed successfully!' };
   }
 }
